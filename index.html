@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中国地质科学院项目管理系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- 主容器 -->
+    <div class="container-fluid mt-3">
+        <!-- 标题栏 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="header-card">
+                    <h1><i class="fas fa-university"></i> 中国地质科学院科研项目管理系统</h1>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="control-group">
+                                <label class="control-label" for="Combobox_gf">项目选择：</label>
+                                <select class="form-control" id="Combobox_gf">
+                                    <option value="">请先加载Excel文件</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <div id="Label_gf" class="label-display">
+                                <i class="fas fa-calendar-alt"></i> 中国地质科学院  2024年获批5项，2025年获批6项
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 总分析区域 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h3><i class="fas fa-chart-pie"></i> 总分析</h3>
+                <div class="control-panel">
+                    <button class="btn-control" id="pushButton_1">
+                        <i class="fas fa-file-import"></i> 加载Excel文件
+                    </button>
+                    <button class="btn-control" id="pushButton_2">
+                        <i class="fas fa-chart-bar"></i> 总经费分析
+                    </button>
+                    <button class="btn-control" id="pushButton_3">
+                        <i class="fas fa-chart-line"></i> 总执行率分析
+                    </button>
+                    <button class="btn-control" id="pushButton_4">
+                        <i class="fas fa-chart-bar"></i> 匹配资金到位情况
+                    </button>
+                    <button class="btn-control" id="pushButton_5">
+                        <i class="fas fa-chart-pie"></i> 院内外课题比例
+                    </button>
+                    <button class="btn-control" id="pushButton_6">
+                        <i class="fas fa-chart-pie"></i> 院内外课题经费比例
+                    </button>
+                    <button class="btn-control" id="pushButton_7">
+                        <i class="fas fa-exclamation-triangle"></i> 预警信息
+                    </button>
+                    <button class="btn-control" id="pushButton_8">
+                        <i class="fas fa-file-pdf"></i> 任务书查阅
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 项目分析区域 -->
+        <div class="row">
+            <div class="col-12">
+                <h3><i class="fas fa-project-diagram"></i> 项目分析</h3>
+                <div class="control-panel">
+                    <button class="btn-control" id="pushButton_9">
+                        <i class="fas fa-table"></i> 概况
+                    </button>
+                    <button class="btn-control" id="pushButton_10">
+                        <i class="fas fa-chart-line"></i> 经费执行率
+                    </button>
+                    <button class="btn-control" id="pushButton_11">
+                        <i class="fas fa-chart-bar"></i> 匹配经费到位情况
+                    </button>
+                    <button class="btn-control" id="pushButton_12">
+                        <i class="fas fa-chart-pie"></i> 院内外课题比例
+                    </button>
+                    <button class="btn-control" id="pushButton_13">
+                        <i class="fas fa-chart-pie"></i> 院内外课题经费比例
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据展示区域 -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="data-display">
+                    <h4><i class="fas fa-database"></i> 数据预览</h4>
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="dataPreview">
+                            <thead>
+                                <tr>
+                                    <th>序号</th>
+                                    <th>项目/课题</th>
+                                    <th>负责人</th>
+                                    <th>单位</th>
+                                    <th>总经费(万元)</th>
+                                    <th>支出经费</th>
+                                    <th>执行率</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="7" class="text-center">请先加载Excel文件查看数据</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 状态栏 -->
+        <footer class="footer mt-4">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-6">
+                        <span class="status-text" id="statusMessage">
+                            <i class="fas fa-info-circle"></i> 就绪
+                        </span>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <span class="status-text">
+                            <i class="fas fa-clock"></i> <span id="currentTime"></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 文件输入（隐藏） -->
+    <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display: none;">
+    <input type="file" id="pdfFileInput" accept=".pdf" style="display: none;">
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- 项目脚本 -->
+    <script src="excelParser.js"></script>
+    <script src="chartManager.js"></script>
+    <script src="modalManager.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
