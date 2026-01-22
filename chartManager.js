@@ -92,7 +92,7 @@ class ChartManager {
                             if (label.includes('执行率') || label.includes('%')) {
                                 return `${label}: ${context.parsed.y.toFixed(2)}%`;
                             }
-                            return `${label}: ${context.parsed.y}`;
+                            return `${label}: ${context.parsed.y.toFixed(2)}`;
                         }
                     }
                 }
@@ -113,10 +113,21 @@ class ChartManager {
                     },
                     ticks: {
                         callback: function(value) {
-                            return value + '%';
+                            return value.toFixed(2) + '%';
                         },
                         ...(options.yAxisConfig?.ticks || {})
                     }
+                }
+            },
+            // 新增：禁用填充效果
+            elements: {
+                line: {
+                    fill: false, // 不填充折线下方区域
+                    tension: 0.4 // 调整线条弯曲度（0-1，0为直线）
+                },
+                point: {
+                    radius: 5, // 数据点半径
+                    hoverRadius: 7 // 鼠标悬停时数据点半径
                 }
             }
         };
@@ -316,9 +327,10 @@ class ChartManager {
                 label: '执行率%',
                 data: validData,
                 borderColor: 'rgb(75, 192, 192)',
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                fill: true,
-                tension: 0.1
+                backgroundColor: 'transparent', // 改为透明
+                borderWidth: 3,
+                fill: false, // 明确设置为不填充
+                tension: 0.4
             }]
         };
 
@@ -360,6 +372,12 @@ class ChartManager {
                             return value + '%';
                         }
                     }
+                }
+            },
+            // 新增：禁用填充效果
+            elements: {
+                line: {
+                    fill: false // 不填充折线下方区域
                 }
             }
         };
