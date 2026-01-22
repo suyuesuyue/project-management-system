@@ -199,16 +199,16 @@ class ProjectSystemApp {
         }
     }
 
-    // 更新数据预览 - 修改执行率显示为百分比
+    // 更新数据预览 - 修改执行率显示为百分比，空白区域显示"-"
     updateDataPreview() {
         const tableBody = document.querySelector('#dataPreview tbody');
 
         if (!this.currentProject || !this.excelProcessor.sheets.length) {
             tableBody.innerHTML = `
-                <tr>
-                    <td colspan="7" class="text-center">请先加载Excel文件并选择项目</td>
-                </tr>
-            `;
+            <tr>
+                <td colspan="7" class="text-center">请先加载Excel文件并选择项目</td>
+            </tr>
+        `;
             return;
         }
 
@@ -216,10 +216,10 @@ class ProjectSystemApp {
         const sheetData = this.excelProcessor.getSheetByProjectName(this.currentProject);
         if (!sheetData || sheetData.length < 3) {
             tableBody.innerHTML = `
-                <tr>
-                    <td colspan="7" class="text-center">数据格式不正确</td>
-                </tr>
-            `;
+            <tr>
+                <td colspan="7" class="text-center">数据格式不正确</td>
+            </tr>
+        `;
             return;
         }
 
@@ -234,21 +234,25 @@ class ProjectSystemApp {
                 if (row[7] !== undefined && row[3] !== undefined) {
                     const numerator = parseFloat(row[7]) || 0; // H列
                     const denominator = parseFloat(row[3]) || 0; // D列
-                    
+
                     if (denominator !== 0) {
                         // 计算百分比并格式化为两位小数
                         const rate = (numerator / denominator) * 100;
                         if (!isNaN(rate)) {
                             executionRate = rate.toFixed(2) + '%';
+                        } else {
+                            executionRate = '-';
                         }
                     } else {
                         executionRate = '0.00%';
                     }
+                } else {
+                    executionRate = '-';
                 }
 
-                // 格式化数字，添加千分位分隔符
+                // 格式化数字，添加千分位分隔符，空白显示"-"
                 const formatNumber = (num) => {
-                    if (num === undefined || num === null || num === '') return '';
+                    if (num === undefined || num === null || num === '') return '-';
                     const number = parseFloat(num);
                     return isNaN(number) ? num : number.toLocaleString('zh-CN', {
                         minimumFractionDigits: 2,
@@ -256,25 +260,31 @@ class ProjectSystemApp {
                     });
                 };
 
+                // 格式化文本，空白显示"-"
+                const formatText = (text) => {
+                    if (text === undefined || text === null || text === '') return '-';
+                    return text;
+                };
+
                 html += `
-                    <tr>
-                        <td>${i - 1}</td>
-                        <td>${row[0] || ''}</td>
-                        <td>${row[1] || ''}</td>
-                        <td>${row[2] || ''}</td>
-                        <td>${formatNumber(row[3])}</td>
-                        <td>${formatNumber(row[4])}</td>
-                        <td class="execution-rate-cell">${executionRate}</td>
-                    </tr>
-                `;
+                <tr>
+                    <td>${i - 1}</td>
+                    <td>${formatText(row[0])}</td>
+                    <td>${formatText(row[1])}</td>
+                    <td>${formatText(row[2])}</td>
+                    <td>${formatNumber(row[3])}</td>
+                    <td>${formatNumber(row[4])}</td>
+                    <td class="execution-rate-cell">${executionRate}</td>
+                </tr>
+            `;
             }
         }
 
         tableBody.innerHTML = html || `
-            <tr>
-                <td colspan="7" class="text-center">暂无数据</td>
-            </tr>
-        `;
+        <tr>
+            <td colspan="7" class="text-center">暂无数据</td>
+        </tr>
+    `;
     }
 
     // 1. 总经费分析（pushButton_2）
@@ -347,32 +357,77 @@ class ProjectSystemApp {
             datasets: [{
                 label: '总执行率%',
                 data: data,
-                borderColor: 'rgb(75, 192, 192)',
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                fill: true,
-                tension: 0.1
+                borderColor: 'rgb(54, 162, 235)', // 蓝色线条
+                backgroundColor: 'transparent', // 透明背景，不填充
+                borderWidth: 3, // 线条宽度
+                pointBackgroundColor: 'rgb(54, 162, 235)', // 数据点颜色
+                pointBorderColor: '#fff', // 数据点边框颜色
+                pointBorderWidth: 2, // 数据点边框宽度
             }]
         };
 
-        const modal = this.modalManager.createChartModal(
-            '总执行率分析',
-            'line',
-            chartData,
-            {
+        // 创建数据表格（保留两位小数）
+        const tableData = labels.map((label, index) => [
+            label,
+            data[index].toFixed(2) + '%'
+        ]);
+
+        // 创建模态窗口
+        const modalId = 'totalExecutionRateModal';
+        const canvasId = modalId + '_canvas';
+        
+        const content = `
+            <div class="chart-container-large">
+                <canvas id="${canvasId}"></canvas>
+            </div>
+            <div class="mt-3">
+                <h6>执行率数据表（单位：%）</h6>
+                <div class="table-responsive">
+                    <table class="table table-striped execution-rate-table">
+                        <thead>
+                            <tr>
+                                <th>项目名称</th>
+                                <th>总执行率</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableData.map(row => `
+                                <tr>
+                                    <td>${row[0]}</td>
+                                    <td>${row[1]}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        const modal = this.modalManager.createModal({
+            title: '总执行率分析',
+            icon: 'fas fa-chart-line',
+            content: content,
+            showFullscreen: true,
+            size: 'modal-xl'
+        });
+
+        modal.instance.show();
+
+        // 延迟渲染图表
+        setTimeout(() => {
+            this.chartManager.createLineChart(canvasId, chartData, {
                 xTitle: '项目',
                 yTitle: '总执行率%',
                 title: '各项目执行率趋势',
                 yAxisConfig: {
                     ticks: {
-                        callback: function(value) {
-                            return value + '%';
+                        callback: function (value) {
+                            return value.toFixed(2) + '%';
                         }
                     }
                 }
-            }
-        );
-
-        modal.instance.show();
+            });
+        }, 100);
     }
 
     // 3. 匹配资金到位情况（pushButton_4）
@@ -671,39 +726,71 @@ class ProjectSystemApp {
         // 这里 getFullTable 返回的是对象 { headers, rows }
         const tableData = this.excelProcessor.getFullTable(sheetName);
 
-        if (tableData.rows.length === 0) {  
+        if (tableData.rows.length === 0) {
             this.modalManager.showMessage('提示', '该Sheet没有数据', 'info');
             return;
         }
 
         // 提取表头 - 直接从 tableData.headers 获取
-        const headers = tableData.headers;  
+        const headers = tableData.headers;
 
-        // 格式化数据，将执行率转换为百分比
-        const formatExecutionRate = (value) => {
-            if (value === undefined || value === null || value === '') return '';
-            // 使用parseExecutionRate方法，它会将小数转换为百分比数值
-            const rate = this.excelProcessor.parseExecutionRate(value);
-            return rate.toFixed(2) + '%';
+        // 定义需要显示完整文本的列（包含这些关键词的列名）
+        const textColumns = ['变更信息', '预警信息', '主要成果', '备注', '说明', '备注信息'];
+
+        // 格式化数据，特殊处理文本列
+        const formatValue = (value, header) => {
+            // 如果值为空，显示"-"
+            if (value === undefined || value === null || value === '' || value === ' ') {
+                return '-';
+            }
+
+            // 判断是否为执行率列（包含"执行率"或"执行%"字样）
+            if (header && (header.includes('执行率') || header.includes('执行%') || header.includes('执行率%'))) {
+                const rate = this.excelProcessor.parseExecutionRate(value);
+                return rate.toFixed(2) + '%';
+            }
+
+            // 检查是否为需要显示完整文本的列
+            const isTextColumn = textColumns.some(textCol =>
+                header && header.includes(textCol)
+            );
+
+            if (isTextColumn) {
+                // 对于文本列，直接返回原始值（Excel中的文本）
+                // 如果是数字，可能是Excel中的错误格式，尝试转换为字符串
+                if (typeof value === 'number') {
+                    // 检查是否是整数，如果是，可能是ID或其他编码
+                    if (Number.isInteger(value) && value < 1000000) {
+                        return value.toString();
+                    }
+                    // 否则按数字处理
+                    return value.toLocaleString('zh-CN', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                }
+                // 如果是字符串，直接返回
+                return value;
+            }
+
+            // 格式化数字列（金额、数量等）
+            if (typeof value === 'number' || !isNaN(parseFloat(value))) {
+                const num = parseFloat(value);
+                return !isNaN(num) ? num.toLocaleString('zh-CN', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }) : value;
+            }
+
+            // 其他情况返回原值
+            return value;
         };
 
-        // 提取数据行 - 从 tableData.rows 获取，并格式化执行率
+        // 提取数据行 - 从 tableData.rows 获取，并格式化
         const rows = tableData.rows.map(row => {
             return headers.map((header, index) => {
                 const value = row[header] || '';
-                // 判断是否为执行率列（包含"执行率"或"执行%"字样）
-                if (header && (header.includes('执行率') || header.includes('执行%') || header.includes('执行率%'))) {
-                    return formatExecutionRate(value);
-                }
-                // 格式化数字列
-                if (typeof value === 'number' || !isNaN(parseFloat(value))) {
-                    const num = parseFloat(value);
-                    return !isNaN(num) ? num.toLocaleString('zh-CN', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    }) : value;
-                }
-                return value;
+                return formatValue(value, header);
             });
         });
 
@@ -760,32 +847,77 @@ class ProjectSystemApp {
             datasets: [{
                 label: '经费执行率%',
                 data: data,
-                borderColor: 'rgb(75, 192, 192)',
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                fill: true,
-                tension: 0.1
+                borderColor: 'rgb(75, 192, 192)', // 青色线条
+                backgroundColor: 'transparent', // 透明背景，不填充
+                borderWidth: 3, // 线条宽度
+                pointBackgroundColor: 'rgb(75, 192, 192)', // 数据点颜色
+                pointBorderColor: '#fff', // 数据点边框颜色
+                pointBorderWidth: 2, // 数据点边框宽度
             }]
         };
 
-        const modal = this.modalManager.createChartModal(
-            `${this.currentProject} - 经费执行率分析`,
-            'line',
-            chartData,
-            {
+        // 创建数据表格（保留两位小数）
+        const tableData = labels.map((label, index) => [
+            label,
+            data[index].toFixed(2) + '%'
+        ]);
+
+        // 创建模态窗口
+        const modalId = 'projectExecutionRateModal';
+        const canvasId = modalId + '_canvas';
+        
+        const content = `
+            <div class="chart-container-large">
+                <canvas id="${canvasId}"></canvas>
+            </div>
+            <div class="mt-3">
+                <h6>执行率数据表（单位：%）</h6>
+                <div class="table-responsive">
+                    <table class="table table-striped execution-rate-table">
+                        <thead>
+                            <tr>
+                                <th>课题名称</th>
+                                <th>执行率</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableData.map(row => `
+                                <tr>
+                                    <td>${row[0]}</td>
+                                    <td>${row[1]}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        const modal = this.modalManager.createModal({
+            title: `${this.currentProject} - 经费执行率分析`,
+            icon: 'fas fa-chart-line',
+            content: content,
+            showFullscreen: true,
+            size: 'modal-xl'
+        });
+
+        modal.instance.show();
+
+        // 延迟渲染图表
+        setTimeout(() => {
+            this.chartManager.createLineChart(canvasId, chartData, {
                 xTitle: '项目/课题',
                 yTitle: '执行率(%)',
                 title: '经费执行率趋势',
                 yAxisConfig: {
                     ticks: {
-                        callback: function(value) {
-                            return value + '%';
+                        callback: function (value) {
+                            return value.toFixed(2) + '%';
                         }
                     }
                 }
-            }
-        );
-
-        modal.instance.show();
+            });
+        }, 100);
     }
 
     // 9. 匹配经费到位情况（pushButton_11）
