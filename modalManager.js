@@ -350,7 +350,16 @@ class ModalManager {
                     tableHtml += `<td>${label || `项目${index + 1}`}</td>`;
                     data.datasets.forEach(dataset => {
                         const value = dataset.data && dataset.data[index] !== undefined ? dataset.data[index] : '-';
-                        tableHtml += `<td>${value}</td>`;
+                        // 如果是执行率数据，格式化为两位小数并添加百分号
+                        if (dataset.label && (dataset.label.includes('执行率') || dataset.label.includes('%'))) {
+                            if (typeof value === 'number') {
+                                tableHtml += `<td>${value.toFixed(2)}%</td>`;
+                            } else {
+                                tableHtml += `<td>${value}</td>`;
+                            }
+                        } else {
+                            tableHtml += `<td>${value}</td>`;
+                        }
                     });
                     tableHtml += '</tr>';
                 });
@@ -368,14 +377,14 @@ class ModalManager {
                 const percentage = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
                 tableHtml += `<tr>
                     <td>${label || `类别${index + 1}`}</td>
-                    <td>${value}</td>
+                    <td>${value.toFixed(2)}</td>
                     <td>${percentage}%</td>
                 </tr>`;
             });
             
             tableHtml += `<tr class="table-info">
                 <td><strong>总计</strong></td>
-                <td><strong>${total}</strong></td>
+                <td><strong>${total.toFixed(2)}</strong></td>
                 <td><strong>100%</strong></td>
             </tr>`;
             tableHtml += '</tbody>';
