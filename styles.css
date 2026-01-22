@@ -680,3 +680,56 @@ body {
     color: #6c757d;
     margin-left: 5px;
 }
+
+/* 折线图数据点样式 */
+.chartjs-render-monitor .chart-point {
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* 折线图悬停效果 */
+.chartjs-render-monitor .chartjs-tooltip {
+    background-color: rgba(0, 0, 0, 0.8) !important;
+    border-radius: 4px !important;
+    color: white !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+}
+
+/* 折线图网格线样式 */
+.chartjs-render-monitor .chartjs-grid-line {
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    border-width: 1px !important;
+}
+
+/* 折线图轴线样式 */
+.chartjs-render-monitor .chartjs-axis {
+    color: #666 !important;
+    font-weight: 500 !important;
+}
+
+/* 执行率表格特殊样式 */
+.execution-rate-table {
+    margin-top: 20px;
+}
+
+.execution-rate-table th {
+    background-color: #f8f9fa;
+    color: #333;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.execution-rate-table td:last-child {
+    text-align: right;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-weight: 600;
+    color: #27ae60;
+}
+
+/* 表格行悬停效果 */
+.execution-rate-table tbody tr:hover {
+    background-color: #f5f9ff;
+    transition: background-color 0.2s;
+}
